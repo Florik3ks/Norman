@@ -2,22 +2,16 @@ import discord
 from discord.ext import commands
 
 import datetime
-import json
 import random
 import aiohttp
 from discord.ext.commands.errors import MemberNotFound
-import requests
 
-import public_config
-from helper_functions import *
-from bot import is_bot_dev
 
 class Wholesome(commands.Cog):
     """Wholesome commands um deine Seele zu reinigen"""
     def __init__(self, bot):
         self.bot = bot
         self.cmds = [c.name for c in self.get_commands()]
-        self.cmds.remove("add")
 
 
     @commands.command()
@@ -45,7 +39,6 @@ class Wholesome(commands.Cog):
         """küsse einen anderen Benutzer mit `kiss @user`"""
         await self.send(ctx, arg, "kiss", "geküsst", cat_ascii="╭(╯ε╰)╮")
 
-
     @commands.command()
     async def poke(self, ctx, *, arg : discord.Member):
         """stupst einen anderen Benutzer mit `hug @user` an"""
@@ -72,67 +65,19 @@ class Wholesome(commands.Cog):
         e.color = ctx.author.color
         e.set_footer(text=ctx.author.name, icon_url=ctx.author.avatar)
 
-        gifs = self.readJson(command)
-        r = random.randint(0, 25 + len(gifs))
-        if r < len(gifs):
-            url = random.choice(gifs)
-        else:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(f"https://purrbot.site/api/img/sfw/{command}/{content_type}") as response:
-                    rjson = await response.json()
-                    if rjson["error"] == False:
-                        url = rjson["link"]
-                    else:
-                        await ctx.send(embed=simple_embed(ctx.author, "Verbindungsfehler zur API", "(´; ω ;｀)", color=discord.Color.red()))
-                        return
+
+        async with aiohttp.ClientSession() as session:
+            async with session.get(f"https://purrbot.site/api/img/sfw/{command}/{content_type}") as response:
+                rjson = await response.json()
+                if rjson["error"] == False:
+                    url = rjson["link"]
+                else:
+                    await ctx.send(embed=simple_embed(ctx.author, "Verbindungsfehler zur API", "(´; ω ;｀)", color=discord.Color.red()))
+                    return
         e.set_image(url=url)
         await ctx.send(embed=e)
     
-    @commands.command()       
-    @is_bot_dev()
-    async def add(self, ctx, *args):
-        """fügt ein GIF für die wholesome-Kategorie hinzu.
-        Syntaxbeispiel: `add hug hug_gif.gif`"""
 
-        def is_gif(url):
-            try:
-                r = requests.head(url)
-            except BaseException:
-                return False
-            if r.headers["content-type"] == "image/gif":
-                return True
-            return False
-        if len(args) != 2:
-            await ctx.send(embed=simple_embed(ctx.author, "Es müssen genau zwei Argumente übergeben werden", "Beispiel: `add hug hug_gif.gif`", color=discord.Color.red()))
-            return
-        category = args[0]
-        if category not in self.cmds:
-            await ctx.send(embed=simple_embed(ctx.author, "Die angegebene Kategorie ist nicht vorhanden", color=discord.Color.red()))
-            return
-        gif = args[1]
-        if not is_gif(gif):
-            await ctx.send(embed=simple_embed(ctx.author, "Die angegebene URL ist kein gültiges GIF.", color=discord.Color.red()))
-            return
-        self.addInJson(category, str(gif))
-        await ctx.send(embed=simple_embed(ctx.author, "Das GIF wurde erfolgreich zur Kategorie hinzugefügt."))
-
-
-    def readJson(self, name : str):
-        try:
-            with open(public_config.path + f'/json/{name}.json', 'r') as myfile:
-                return json.loads(myfile.read())
-        except FileNotFoundError:
-            return []
-
-    def addInJson(self, name : str, add):
-        try:
-            js = self.readJson(name)
-            with open(public_config.path + f'/json/{name}.json', 'w') as myfile:
-                js.append(add)
-                json.dump(js, myfile)
-        except FileNotFoundError:
-            with open(public_config.path + f'/json/{name}.json', 'w') as file:
-                file.write("[]")
 
 
     @hug.error
@@ -152,5 +97,15 @@ class Wholesome(commands.Cog):
         embed.color = discord.Color.red()
         await ctx.send(embed=embed)
 
+
+def simple_embed(author, title, description="", color=discord.Color.green()):
+    embed = discord.Embed(title=title, description=description)
+    embed.color = color
+    embed.timestamp = datetime.datetime.now()
+    embed.set_footer(text=author.name, icon_url=author.avatar)
+    embed.set_thumbnail(url=author.avatar)
+    return embed
+
 async def setup(bot):
     await bot.add_cog(Wholesome(bot))
+    print("Cog loaded: Wholesome")
