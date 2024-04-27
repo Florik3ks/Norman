@@ -13,8 +13,10 @@ import public_config as config
 import private_config as secrets
 
 intents = discord.Intents.all()
-bot = commands.Bot(command_prefix=config.get("prefix"), intents=intents, application_id=secrets.get("app_id"))
+bot = commands.Bot(command_prefix=config.get("prefix"),
+                   intents=intents, application_id=secrets.get("app_id"))
 bot.owner_id = secrets.get("owner_id")
+
 
 @bot.event
 async def on_error(event, *args, **kwargs):
@@ -22,19 +24,21 @@ async def on_error(event, *args, **kwargs):
     print(traceback.format_exc())
     print("\n\n")
 
+
 @bot.event
 async def on_command_error(ctx, error):
     print("on_command_error:\n")
+    print(error)
     return
 
 
 @bot.tree.error
 async def on_app_command_error(ctx, error):
     print(f"on_slash_command_error:\n{error}")
+    print(error)
     return
-    
-    
-    # # if this is not manually called with a textchannel as ctx and the ctx has no own error handler 
+
+    # # if this is not manually called with a textchannel as ctx and the ctx has no own error handler
     # if not isinstance(ctx, discord.TextChannel) and hasattr(ctx.command, 'on_error'):
     #     print("on_command_error:\n")
     #     print(traceback.format_exception(type(error), value=error, tb=error.__traceback__))
@@ -55,20 +59,31 @@ async def on_app_command_error(ctx, error):
     # traceback_str = ''.join(traceback.format_exception(type(error), value=error, tb=error.__traceback__))
 
     # embed.description = f"```{traceback_str}```"
-    # if len(embed.description) > 2000: 
+    # if len(embed.description) > 2000:
     #     embed.description = f"```{traceback_str[-1994:]}```"
 
     # await ctx.send(embed=embed)
+
+
+@bot.command()
+async def sync(ctx):
+    if ctx.author.id != bot.owner_id:
+        return
+    # await bot.tree.sync()
+    print("syncing")
+    bot.tree.copy_global_to(guild=discord.Object(572410770520932352))
+    await bot.tree.sync(guild=discord.Object(572410770520932352))
+    print("synced")
+    embed = discord.Embed(title="Synced", color=discord.Color.green())
+    await ctx.send(embed=embed)
 
 
 @bot.event
 async def on_ready():
     await bot.change_presence(status=discord.enums.Status.dnd)
     print("ready")
-    await bot.tree.sync()
-    print("synced")
     print(f"logged in as {bot.user}")
-        
+
 
 async def main():
     async with bot:
@@ -78,9 +93,10 @@ async def main():
         # await bot.load_extension("cogs.utility")
         # await bot.load_extension("cogs.memes")
 
-        # await bot.load_extension("cogs.uni")
+        await bot.load_extension("cogs.uni")
         bot.on_command_error = on_command_error
         await bot.start(token=secrets.get("discord_token"), reconnect=True)
+
 
 if __name__ == "__main__":
     asyncio.run(main())

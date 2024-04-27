@@ -13,15 +13,15 @@ import public_config as config
 
 
 class Reminder():
-    def __init__(self, author = None, date = "", message = "", users = None, roles = None, reminder_again = 0, reminder_again_in = "", is_private=False, r = None, channel=None):
+    def __init__(self, author=None, date="", message="", users=None, roles=None, reminder_again=0, reminder_again_in="", is_private=False, r=None, channel=None):
         if users is None:
             users = []
         if roles is None:
             roles = []
-            
+
         if channel != None:
             self.channel = channel
-        
+
         if not r:
             self.author = author
             self.date = date
@@ -31,8 +31,8 @@ class Reminder():
             if len(users) == len(roles) == 0:
                 self.users = [author]
             self.reminder_again = reminder_again
-            self.reminder_again_in = reminder_again_in    
-            self.private = is_private 
+            self.reminder_again_in = reminder_again_in
+            self.private = is_private
         else:
             self.__dict__ = json.loads(r)
 
@@ -55,20 +55,23 @@ class DeleteReminder(discord.ui.View):
             placeholder="Wähle die Erinnerung aus, die du löschen möchtest."
         )
         self.select.callback = self.callback
-        self.add_item(self.select)        
-                        
+        self.add_item(self.select)
+
     async def callback(self, interaction: discord.Interaction) -> None:
         self.select.disabled = True
         plural = "en" if len(self.select.values) > 1 else ""
         e = discord.Embed(
-            title=f"Die Erinnerung{plural} wurde erfolgreich gelöscht.", 
-            description="\n".join([f"{self.reminders[int(value)].message} - {self.reminders[int(value)].date}" for value in self.select.values]),
+            title=f"Die Erinnerung{plural} wurde erfolgreich gelöscht.",
+            description="\n".join(
+                [f"{self.reminders[int(value)].message} - {self.reminders[int(value)].date}" for value in self.select.values]),
             color=discord.Color.green()
         )
         e.timestamp = datetime.datetime.now()
-        e.set_footer(text=interaction.user.name, icon_url=interaction.user.avatar)
+        e.set_footer(text=interaction.user.name,
+                     icon_url=interaction.user.avatar)
         for value in self.select.values:
-            remove_new_reminder(interaction.user.id, self.reminders[int(value)])        
+            remove_new_reminder(interaction.user.id,
+                                self.reminders[int(value)])
         await interaction.response.send_message(embed=e, ephemeral=True)
         self.stop()
 
@@ -77,6 +80,7 @@ class DeleteReminder(discord.ui.View):
 
         # Make sure we know what the error actually is
         traceback.print_exception(type(error), error, error.__traceback__)
+
 
 class Reminders(commands.Cog, name="Erinnerungen"):
     """Commands zum Bedienen der Erinnerungs-funktion"""
@@ -95,29 +99,33 @@ class Reminders(commands.Cog, name="Erinnerungen"):
     @app_commands.choices(
         zugriff=[
             app_commands.Choice(name="privat", value="private"),
-            app_commands.Choice(name="öffentlich", value="public"), 
+            app_commands.Choice(name="öffentlich", value="public"),
         ]
     )
     async def newreminder(self, interaction: discord.Interaction, zeit: str, nachricht: str, zugriff: Optional[app_commands.Choice[str]], user: Optional[discord.User] = None):
         # Reminder is public by default
         is_private = False if not zugriff else zugriff.value == "private"
-        
-        relative_match = re.match(r'^((?P<days>\d+?)d)?\s*((?P<hours>\d+?)h)?\s*((?P<minutes>\d+?)min)?$', zeit)
-        absolute_match = re.match(r'^((?P<day>\d{1,2})(\.(?P<month>\d{1,2}))(\.(?P<year>\d\d(\d\d)?))?)?\s*(?P<time>(?P<hour>\d\d):(?P<minute>\d\d))?$', zeit)
-        
+
+        relative_match = re.match(
+            r'^((?P<days>\d+?)d)?\s*((?P<hours>\d+?)h)?\s*((?P<minutes>\d+?)min)?$', zeit)
+        absolute_match = re.match(
+            r'^((?P<day>\d{1,2})(\.(?P<month>\d{1,2}))(\.(?P<year>\d\d(\d\d)?))?)?\s*(?P<time>(?P<hour>\d\d):(?P<minute>\d\d))?$', zeit)
+
         if not relative_match and not absolute_match:
-            e = discord.Embed(title=f"Aktion unzulässig", description="Das angegebene Datum ist nicht zulässig.", color=discord.Color.red())
+            e = discord.Embed(title=f"Aktion unzulässig",
+                              description="Das angegebene Datum ist nicht zulässig.", color=discord.Color.red())
             e.timestamp = datetime.datetime.now()
-            e.set_footer(text=interaction.user.name, icon_url=interaction.user.avatar) 
+            e.set_footer(text=interaction.user.name,
+                         icon_url=interaction.user.avatar)
             await interaction.response.send_message(embed=e, ephemeral=True)
             return
 
-        if relative_match:    
+        if relative_match:
             time = datetime.datetime.now() + self.parse_to_timedelta(zeit)
 
         if absolute_match:
             time = datetime.datetime.now()
-            
+
             if absolute_match.group("day"):
                 time = time.replace(day=int(absolute_match.group("day")))
             if absolute_match.group("month"):
@@ -128,57 +136,63 @@ class Reminders(commands.Cog, name="Erinnerungen"):
                     year = int(year) + 2000
                 time = time.replace(year=year)
 
-
             if absolute_match.group("time"):
-                time = time.replace(hour=int(absolute_match.group("hour")), minute=int(absolute_match.group("minute")))
+                time = time.replace(hour=int(absolute_match.group(
+                    "hour")), minute=int(absolute_match.group("minute")))
                 if time < datetime.datetime.now():
                     # add one day
                     time += datetime.timedelta(days=1)
             else:
                 time = time.replace(hour=0, minute=0)
-                    
+
             if time < datetime.datetime.now() and not absolute_match.group("year"):
                 # add one year
                 time = time.replace(year=time.year + 1)
-            
+
         if time < datetime.datetime.now():
             e = discord.Embed(
-                title=f"Aktion unzulässig", 
+                title=f"Aktion unzulässig",
                 description=f"Erinnerungen in der Vergangenheit sind nicht erlaubt, {time.strftime('%d.%m.%Y %H:%M')} < {datetime.datetime.now().strftime('%d.%m.%Y %H:%M')}",
                 color=discord.Color.red()
             )
             e.timestamp = datetime.datetime.now()
-            e.set_footer(text=interaction.user.name, icon_url=interaction.user.avatar) 
+            e.set_footer(text=interaction.user.name,
+                         icon_url=interaction.user.avatar)
             await interaction.response.send_message(embed=e, ephemeral=True)
             return
-                
+
         # convert time to readable string
         time = time.strftime('%d.%m.%Y %H:%M')
         # if reminder is for other person, check if it is public
         other = ""
         if user:
             if is_private:
-                e = discord.Embed(title=f"Aktion unzulässig", description="Erinnerungen für andere Nutzer müssen öffentlich sein.", color=discord.Color.red())
+                e = discord.Embed(
+                    title=f"Aktion unzulässig", description="Erinnerungen für andere Nutzer müssen öffentlich sein.", color=discord.Color.red())
                 e.timestamp = datetime.datetime.now()
-                e.set_footer(text=interaction.user.name, icon_url=interaction.user.avatar) 
+                e.set_footer(text=interaction.user.name,
+                             icon_url=interaction.user.avatar)
                 await interaction.response.send_message(embed=e, ephemeral=True)
                 return
-            
+
             other = f"{user.name}, "
             user = user.id
         else:
             user = interaction.user.id
-            
-        r = Reminder(interaction.user.id, time, nachricht, [user], [], is_private=is_private, channel=interaction.channel_id)
 
-        e = discord.Embed(title=f"Die Erinnerung für {other}{time} wurde erfolgreich gespeichert.", description=nachricht, color=discord.Color.green())
+        r = Reminder(interaction.user.id, time, nachricht, [
+                     user], [], is_private=is_private, channel=interaction.channel_id)
+
+        e = discord.Embed(
+            title=f"Die Erinnerung für {other}{time} wurde erfolgreich gespeichert.", description=nachricht, color=discord.Color.green())
         e.timestamp = datetime.datetime.now()
-        e.set_footer(text=interaction.user.name, icon_url=interaction.user.avatar) 
-                
-        add_new_reminder(r) 
+        e.set_footer(text=interaction.user.name,
+                     icon_url=interaction.user.avatar)
+
+        add_new_reminder(r)
         await interaction.response.send_message(embed=e, ephemeral=is_private)
-       
-    @app_commands.command(name="removereminder", description="Löscht Reminder") 
+
+    @app_commands.command(name="removereminder", description="Löscht Reminder")
     async def removereminder(self, interaction: discord.Interaction):
         r = get_reminder()
         reminders = []
@@ -186,14 +200,15 @@ class Reminders(commands.Cog, name="Erinnerungen"):
             rem = Reminder(r=reminder)
             reminders.append(rem)
         if len(reminders) == 0:
-            e = discord.Embed(title=f"Du hast keine Erinnerungen gespeichert.", color=discord.Color.red())
+            e = discord.Embed(
+                title=f"Du hast keine Erinnerungen gespeichert.", color=discord.Color.red())
             e.timestamp = datetime.datetime.now()
-            e.set_footer(text=interaction.user.name, icon_url=interaction.user.avatar) 
+            e.set_footer(text=interaction.user.name,
+                         icon_url=interaction.user.avatar)
             await interaction.response.send_message(embed=e, ephemeral=True)
             return
         await interaction.response.send_message(view=DeleteReminder(reminders), ephemeral=True)
-        
-        
+
     @tasks.loop(seconds=60)
     async def checkReminder(self):
         r = get_reminder()
@@ -201,7 +216,7 @@ class Reminders(commands.Cog, name="Erinnerungen"):
         recipients = list(r.keys())
         for recipient_id in recipients:
             for reminder in r[recipient_id]:
-                rem : Reminder = Reminder(r=reminder)
+                rem: Reminder = Reminder(r=reminder)
                 # not all reminders have this
                 with contextlib.suppress(BaseException):
                     if rem.private:
@@ -219,12 +234,18 @@ class Reminders(commands.Cog, name="Erinnerungen"):
                     if not isinstance(channel, discord.User):
                         guild = channel.guild
                         if guild:
-                            content = "" + ' '.join([guild.get_role(role).mention for role in rem.roles])
-                            content += " " + ' '.join([guild.get_member(user).mention for user in rem.users])
+                            content = "" + \
+                                ' '.join(
+                                    [guild.get_role(role).mention for role in rem.roles])
+                            content += " " + \
+                                ' '.join(
+                                    [guild.get_member(user).mention for user in rem.users])
                             color = guild.get_member(rem.author).color
-                    embed = discord.Embed(title="Erinnerung", description=rem.message, color=color)
+                    embed = discord.Embed(
+                        title="Erinnerung", description=rem.message, color=color)
                     embed.timestamp = datetime.datetime.now()
-                    embed.set_footer(text=self.bot.get_user(rem.author).name, icon_url=self.bot.get_user(rem.author).avatar)
+                    embed.set_footer(text=self.bot.get_user(
+                        rem.author).name, icon_url=self.bot.get_user(rem.author).avatar)
 
                     remove_new_reminder(rem.author, rem)
 
@@ -232,18 +253,19 @@ class Reminders(commands.Cog, name="Erinnerungen"):
                     if rem.reminder_again > 0:
                         embed.description += f"\n\nDiese Erinnerung wird noch {(str(rem.reminder_again) + ' weiteres Mal') if rem.reminder_again == 1 else (str(rem.reminder_again) + ' weitere Male')} eintreten."
                         rem.reminder_again -= 1
-                        rem.date = (time + self.parse_to_timedelta(rem.reminder_again_in)).strftime('%d.%m.%Y %H:%M')
+                        rem.date = (
+                            time + self.parse_to_timedelta(rem.reminder_again_in)).strftime('%d.%m.%Y %H:%M')
                         embed.description += f"\nDas nächste Mal ist {rem.date}."
                         add_new_reminder(rem)
 
                     elif rem.reminder_again == -1:
                         embed.description += f"\n\nDiese Erinnerung wird noch unendlich weitere Male eintreten."
-                        rem.date = (time + self.parse_to_timedelta(rem.reminder_again_in)).strftime('%d.%m.%Y %H:%M')
+                        rem.date = (
+                            time + self.parse_to_timedelta(rem.reminder_again_in)).strftime('%d.%m.%Y %H:%M')
                         embed.description += f"\nDas nächste Mal ist {rem.date}."
                         add_new_reminder(rem)
 
                     await channel.send(content=content, embed=embed)
-
 
     @checkReminder.before_loop
     async def beforeReminderCheck(self):
@@ -262,7 +284,8 @@ class Reminders(commands.Cog, name="Erinnerungen"):
         print(error)
 
     def parse_to_timedelta(self, time_str) -> Optional[datetime.timedelta]:
-        regex = re.compile(r'((?P<days>\d+?)d)?\s*((?P<hours>\d+?)h)?\s*((?P<minutes>\d+?)min)?')
+        regex = re.compile(
+            r'((?P<days>\d+?)d)?\s*((?P<hours>\d+?)h)?\s*((?P<minutes>\d+?)min)?')
         parts = regex.match(time_str)
         if not parts:
             return None
@@ -276,6 +299,7 @@ class Reminders(commands.Cog, name="Erinnerungen"):
                 return None
         return datetime.timedelta(**d)
 
+
 def add_new_reminder(r):
     json_string = json.dumps(r.__dict__)
     reminder = get_reminder()
@@ -285,6 +309,7 @@ def add_new_reminder(r):
     reminder[str(r.author)].append(json_string)
     update_reminder(reminder)
 
+
 def remove_new_reminder(author, r):
     r = json.dumps(r.__dict__)
     reminder = get_reminder()
@@ -293,13 +318,15 @@ def remove_new_reminder(author, r):
         reminder[str(author)].pop(reminder[str(author)].index(r))
     update_reminder(reminder)
 
+
 def update_reminder(reminder):
     config.dump("reminder.json", reminder)
+
 
 def get_reminder():
     return config.load("reminder.json")
 
+
 async def setup(bot):
     await bot.add_cog(Reminders(bot))
     print("Cog loaded: Reminder")
-        
