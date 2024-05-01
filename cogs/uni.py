@@ -4,7 +4,7 @@ import discord
 from discord.ext import commands, tasks
 import traceback
 import json
-import public_config
+import config.public_config as public_config
 from discord import app_commands
 from typing import List, Optional
 
@@ -190,7 +190,7 @@ class Uni(commands.Cog):
     @tasks.loop(hours=2)
     async def update_assignments(self):
         # load files (https://github.com/Garmelon/PFERD)
-        os.chdir(public_config.get("path"))
+        os.chdir(os.path.dirname(__file__) + os.sep + "..")
         os.popen("sh assignment-data/loadAssignments.sh").read()
         change = False
         fulldata = get_data()

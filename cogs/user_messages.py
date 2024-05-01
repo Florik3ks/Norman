@@ -2,7 +2,7 @@ import json
 import random
 import discord
 import datetime
-import public_config
+import config.public_config as public_config
 from discord.ext import commands
 
 

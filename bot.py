@@ -1,14 +1,15 @@
 '''
-id = 0000
+# invite link: 
+id = 0
 https://discord.com/api/oauth2/authorize?client_id={id}&permissions=8&scope=bot
 '''
 
 import discord
 import asyncio
 import traceback
-import public_config as config
+import config.public_config as config
 from discord.ext import commands
-import private_config as private
+import config.private_config as private
 from help.help_command import HelpCommand
 
 intents = discord.Intents.all()

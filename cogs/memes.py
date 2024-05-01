@@ -3,7 +3,7 @@ import asyncio
 import requests
 import validators
 import contextlib
-import public_config
+import config.public_config as public_config
 from discord.ext import commands
 
 

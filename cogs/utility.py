@@ -6,7 +6,7 @@ import discord
 import asyncio
 import datetime
 import contextlib
-import public_config
+import config.public_config as public_config
 from PIL import Image
 from io import BytesIO
 from PIL.ImageOps import invert

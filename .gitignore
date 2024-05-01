@@ -3,5 +3,8 @@ __pycache__
 test
 data
 *.cfg
-config
+config/*.json
+!config/public.json.example
+!config/private.json.example
 assignment-data
+.vscode
