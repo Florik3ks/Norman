@@ -20,7 +20,7 @@ def change(key, value):
 
 
 def load(file, fallback={}):
-    if not os.path.exists('json'):
+    if not os.path.exists(os.path.join(os.path.dirname(__file__), 'json')):
         os.makedirs('json')
     file = os.path.join(os.path.dirname(__file__), 'json', file)
     if not os.path.exists(file):
