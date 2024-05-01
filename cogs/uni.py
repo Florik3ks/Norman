@@ -269,7 +269,7 @@ class Uni(commands.Cog):
     @update_assignments.error
     async def assignment_error(self, error):
         print("Error in assignment loop")
-        print(error)
+        traceback.print_exception(type(error), error, error.__traceback__)
 
     def get_due_date(self, path, time_pattern, datetime_pattern, locale_="de_DE.UTF-8"):
         try:

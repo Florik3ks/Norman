@@ -30,7 +30,7 @@ def load(file, fallback={}):
 
 
 def dump(file, data):
-    if not os.path.exists('json'):
+    if not os.path.exists(os.path.join(os.path.dirname(__file__), 'json')):
         os.makedirs('json')
     file = os.path.join(os.path.dirname(__file__), 'json', file)
     with open(file, 'w') as f:
