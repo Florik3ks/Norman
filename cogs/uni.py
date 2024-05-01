@@ -201,7 +201,7 @@ class Uni(commands.Cog):
         # load files (https://github.com/Garmelon/PFERD)
         os.chdir(os.path.dirname(__file__) + os.sep + ".." + os.sep + "assignment-data")
         os.popen("sh loadAssignments.sh").read()
-        
+
         change = False
         fulldata = get_data()
 
@@ -291,7 +291,7 @@ class Uni(commands.Cog):
                         date = re.match(time_pattern, line).group(1)
                         time = re.match(time_pattern, line).group(2)
                         actual_date = datetime.strptime(
-                            date + " " + time, datetime_pattern)
+                            date + time, datetime_pattern)
                         # set year if none is specified
                         if actual_date.year < datetime.now().year:
                             actual_date = actual_date.replace(
