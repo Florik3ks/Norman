@@ -27,53 +27,48 @@ async def on_error(event, *args, **kwargs):
 
 @bot.event
 async def on_command_error(ctx, error):
-    print("on_command_error:\n")
-    print(error)
-    return
+    error = error.original if hasattr(error, 'original') else error
+    embed = discord.Embed(title=type(error).__name__[
+                          :256], color=discord.Color.red())
+    # traceback_str = ''.join(traceback.format_exception(type(error), value=error, tb=error.__traceback__))
+    traceback_str = error.text + "\n"
+    if hasattr(error, "offset"):
+        traceback_str += " " * (error.offset - 1) + "^" + "\n"
+    if hasattr(error, "msg"):
+        traceback_str += error.msg
+
+    embed.description = f"```{traceback_str}```"
+    if len(embed.description) > 2000:
+        embed.description = f"```{traceback_str[-1994:]}```"
+
+    await ctx.send(embed=embed)
 
 
 @bot.tree.error
 async def on_app_command_error(ctx, error):
     print(f"on_slash_command_error:\n{error}")
-    print(error)
+    await ctx.send(error.text)
     return
 
-    # # if this is not manually called with a textchannel as ctx and the ctx has no own error handler
-    # if not isinstance(ctx, discord.TextChannel) and hasattr(ctx.command, 'on_error'):
-    #     print("on_command_error:\n")
-    #     print(traceback.format_exception(type(error), value=error, tb=error.__traceback__))
-    #     print("\n\n")
-    #     return
 
-    # error: Exception = getattr(error, 'original', error)
-    # if isinstance(error, (CommandNotFound, MissingRequiredArgument)):
-    #     return
-    # if isinstance(error, (NotOwner, CheckFailure)):
-    #     await ctx.send(embed=simple_embed(ctx.author, "Du hast keine Berechtigung diesen Command auszuführen.", color=discord.Color.red()))
-    #     return
-    # if isinstance(error, (UserNotFound)):
-    #     await ctx.send(embed=simple_embed(ctx.author, "Der angegebene Nutzer wurde nicht gefunden.", color=discord.Color.red()))
-    #     return
-    # embed = discord.Embed(title=repr(error)[:256])
-    # embed.color = discord.Color.red()
-    # traceback_str = ''.join(traceback.format_exception(type(error), value=error, tb=error.__traceback__))
-
-    # embed.description = f"```{traceback_str}```"
-    # if len(embed.description) > 2000:
-    #     embed.description = f"```{traceback_str[-1994:]}```"
-
-    # await ctx.send(embed=embed)
-
+@bot.command()
+async def syncguild(ctx):
+    if ctx.author.id != bot.owner_id:
+        return
+    print("syncing..")
+    bot.tree.copy_global_to(guild=ctx.guild)
+    await bot.tree.sync(guild=ctx.guild)
+    print("synced to guild " + ctx.guild.name)
+    embed = discord.Embed(title="Synced to guild " + ctx.guild.name, color=discord.Color.green())
+    await ctx.send(embed=embed)
 
 @bot.command()
 async def sync(ctx):
     if ctx.author.id != bot.owner_id:
         return
-    # await bot.tree.sync()
-    print("syncing")
-    bot.tree.copy_global_to(guild=discord.Object(572410770520932352))
-    await bot.tree.sync(guild=discord.Object(572410770520932352))
-    print("synced")
+    print("syncing globally..")
+    await bot.tree.sync()
+    print("synced globally")
     embed = discord.Embed(title="Synced", color=discord.Color.green())
     await ctx.send(embed=embed)
 
@@ -89,11 +84,12 @@ async def main():
     async with bot:
         await bot.load_extension("cogs.reminder")
         await bot.load_extension("cogs.wholesome")
+        await bot.load_extension("cogs.utility")
+        await bot.load_extension("cogs.uni")
+
         # await bot.load_extension("cogs.user_messages")
-        # await bot.load_extension("cogs.utility")
         # await bot.load_extension("cogs.memes")
 
-        await bot.load_extension("cogs.uni")
         bot.on_command_error = on_command_error
         await bot.start(token=secrets.get("discord_token"), reconnect=True)
 

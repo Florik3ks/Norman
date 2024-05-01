@@ -1,32 +1,19 @@
-import collections
-import contextlib
+import io
+import ast
+import typing
+import random
 import discord
+import asyncio
+import datetime
+import contextlib
+import public_config
+from PIL import Image
+from io import BytesIO
+from PIL.ImageOps import invert
 from discord.ext import commands
 from discord.errors import HTTPException
-
-import random
-import ast
-import io
-from PIL import Image
-import typing
-from PIL import Image
-from PIL.ImageOps import invert
-# from pnglatex import pnglatex
 from pnglatex.pnglatex import _get_fname, Path, _BINARIES, devnull, _cleanup, _run, _get_bin
-from io import BytesIO
-import public_config
-from helper_functions import *
 
-# ev command
-from cogs.debug import *
-from cogs.memes import *
-from cogs.music import *
-from cogs.reminder import *
-from unused.school import *
-from cogs.user_messages import *
-from cogs.utility import *
-from cogs.wholesome import *
-from cogs.uni import *
 
 _TEX_BP = """\\documentclass[a0,landscape]{{a0poster}}
 \\usepackage{{mathtools}}
@@ -41,6 +28,7 @@ _TEX_BP = """\\documentclass[a0,landscape]{{a0poster}}
 }}
 \\end{{document}}"""
 
+
 class Utility(commands.Cog):
     """Andere nützliche Commands"""
 
@@ -49,20 +37,9 @@ class Utility(commands.Cog):
         self.quotes = self.get_quotes()
 
     @commands.command()
-    async def embed(self, ctx, *args):
-        """Ruft die Funktion simpleEmbed(*args) mit den übergebenen Argumenten auf.
-            Diese sind: `title, description = "", image_url=""`
-            Zumindest der Titel muss übergeben werden, die anderen beiden sind optional.
-            Wenn ein Argument aus mehreren Worten bestehen soll, müssen diese in "Wort1 Wort2" stehen."""
-
-        await ctx.send(embed=simple_embed(ctx.author, *args))
-        await ctx.message.delete()
-
-    @commands.command()
     async def pfpart(self, ctx, big: typing.Optional[bool] = False):
         """Zeigt dein Discord-Profilbild in ASCII-Art"""
         bites = await ctx.author.avatar.read()
-        # im = Image.frombytes("RGB", (125, 125), bites, "raw")
         im = Image.open(io.BytesIO(bites))
         r = im.convert('1')
         res = 64
@@ -95,14 +72,18 @@ class Utility(commands.Cog):
         for y in range((im.height // 4) * 4):
             for x in range((im.width // 2) * 2):
                 nx, ny = get_arr_position(x, y)
-                value = hex(int(dots[ny][nx], 16) + int(add_dot_position(x, y), 16))
+                value = hex(int(dots[ny][nx], 16) +
+                            int(add_dot_position(x, y), 16))
                 dots[ny][nx] = value
 
         for y in range(len(dots)):
             for x in range(len(dots[0])):
                 dots[y][x] = chr(int(dots[y][x], 16))
 
-        e = simple_embed(ctx.author, "Dein Icon")
+        e = discord.Embed(title="Dein Icon")
+        e.set_footer(text=ctx.author.display_name,
+                     icon_url=ctx.author.avatar_url)
+        e.timestamp = datetime.datetime.utcnow()
         e.description = "{0}x{0}\n```".format(str(res))
         for line in dots:
             e.description += ''.join(line) + "\n"
@@ -114,12 +95,12 @@ class Utility(commands.Cog):
     @commands.is_owner()
     @commands.command(name="eval", aliases=["ev", "evaluate"])
     async def _eval(self, ctx, *, cmd):
-        """Führt Code aus und sendet das Ergebnis der letzten Zeile, falls vorhanden. (devs only)
+        """Führt Code aus und sendet das Ergebnis der letzten Zeile, falls vorhanden.
             Beispiel: 
             ```,ev 
                 for i in range(4):
                     await ctx.send(ctx.author.mention)
-                "uwu"```"""
+                "a"```"""
         def insert_returns(body):
             # insert return stmt if the last expression is a expression statement
             if isinstance(body[-1], ast.Expr):
@@ -165,7 +146,6 @@ class Utility(commands.Cog):
             if type(result) != discord.message.Message:
                 await ctx.send(result)
 
-
     def ownpnglatex(self, tex_string, output=None):
         """
         Produce an png based on a input LaTeX snippet.
@@ -197,7 +177,8 @@ class Utility(commands.Cog):
         return Path(output)
 
     def latexToImage(self, formula):
-        image = Image.open(self.ownpnglatex(r"$"+formula+r"$", 'tmpFormula.png'))
+        image = Image.open(self.ownpnglatex(
+            r"$"+formula+r"$", 'tmpFormula.png'))
 
         image = invert(image)
         image = image.convert("RGBA")
@@ -222,7 +203,7 @@ class Utility(commands.Cog):
         try:
             img = self.latexToImage(arg)
         except ValueError:
-            await ctx.send(embed=simple_embed(ctx.author, "Ungültige Eingabe", color=discord.Color.red()))
+            await ctx.send(embed=discord.Embed(title="Ungültige Eingabe", color=discord.Color.red()))
             return
         # img = img.resize((int(img.width * 2), int(img.height * 2)))#, Image.ANTIALIAS)
         with BytesIO() as image_binary:
@@ -231,9 +212,10 @@ class Utility(commands.Cog):
             await ctx.send(file=discord.File(fp=image_binary, filename='image.png'))
 
     @commands.command()
-    async def zitate(self, ctx, *, arg):
+    async def addzitat(self, ctx, *, arg):
         """Fügt ein Zitat der Zitate-sammlung hinzu"""
-        e = simple_embed(ctx.author, "Möchtest du dieses Zitat speichern?", arg)
+        e = discord.Embed(
+            title="Möchtest du dieses Zitat speichern?", description=arg)
         msg = await ctx.channel.send(embed=e)
         check = "\N{White Heavy Check Mark}"
         await msg.add_reaction(check)
@@ -253,67 +235,33 @@ class Utility(commands.Cog):
             self.add_quote(arg)
             e.color = discord.Color.green()
             await msg.edit(embed=e)
-        
+
     @commands.command()
-    async def zitat(self, ctx, *args):
+    async def getzitat(self, ctx, *args):
         """Gibt ein zufälliges Zitat aus der Zitatesammlung aus."""
-        if args and not args[0].isnumeric():
-            await ctx.send(embed=simple_embed(ctx.author, f"Um ein Zitat hinzuzufügen, nutze bitte {public_config.PREFIX}zitate", color=discord.Color.red()))
-            return
         if len(self.quotes) == 0:
-            await ctx.channel.send(embed=simple_embed(ctx.author,"Momentan sind noch keine Zitate vorhanden.", color=discord.Color.red()))
+            await ctx.channel.send(embed=discord.Embed(ctx.author, "Es sind keine Zitate vorhanden.", color=discord.Color.red()))
             return
         quote = random.choice(self.quotes)
         random_quote = True
         if args and args[0].isnumeric():
             index = int(args[0])
-            if(1 <= index <= len(self.quotes)):
+            if (1 <= index <= len(self.quotes)):
                 quote = self.quotes[index - 1]
                 random_quote = False
 
-        e = simple_embed(ctx.author, ("Zufälliges " if random_quote else "") + "Zitat Nr. " + str(self.quotes.index(quote) + 1), quote)
+        e = discord.Embed(title=("Zufälliges " if random_quote else "") +
+                          "Zitat Nr. " + str(self.quotes.index(quote) + 1), description=quote)
         await ctx.channel.send(embed=e)
-        
+
     def get_quotes(self):
-        try:
-            with open(public_config.path + '/json/quotes.json', 'r') as myfile:
-                return json.loads(myfile.read())
-        except FileNotFoundError:
-            return []
+        return public_config.load("quotes.json", [])
 
     def add_quote(self, quote):
         self.quotes.append(quote)
-        try:
-            with open(public_config.path + '/json/quotes.json', 'w') as myfile:
-                json.dump(self.quotes, myfile)
-        except FileNotFoundError:
-            with open(public_config.path + '/json/quotes.json', 'w') as file:
-                file.write("[]")
-            with open(public_config.path + '/json/quotes.json', 'w') as myfile:
-                json.dump(self.quotes, myfile)
-        
-        
-
-    @commands.Cog.listener()
-    async def on_voice_state_update(self, member, before, after):
-        afk_channel = member.guild.afk_channel
-        if after.channel and before.channel:  # if the member didn't just join or quit, but moved channels
-            if after.channel == afk_channel and before.channel.id in public_config.AWAKE_CHANNEL_IDS:  # the "Stay awake" feature
-                await member.move_to(before.channel)
-
-        # the "banish" feature
-        if after.channel and member.guild.get_role(public_config.BANISHED_ROLE_ID) in member.roles and after.channel.id != public_config.BANISHED_VC_ID and member.id not in self.bot.owner_ids:
-            await member.move_to(member.guild.get_channel(public_config.BANISHED_VC_ID))
-
-    @commands.Cog.listener()
-    async def on_member_update(self, before, after):
-        # move to hell if banished role was added
-        hell = before.guild.get_channel(public_config.BANISHED_VC_ID)
-        r = before.guild.get_role(public_config.BANISHED_ROLE_ID)
-        if r in after.roles and r not in before.roles and before.id not in self.bot.owner_ids and after.voice != None and after.voice.channel != hell:
-            await after.move_to(hell)
-
+        public_config.dump("quotes.json", self.quotes)
 
 
 async def setup(bot):
     await bot.add_cog(Utility(bot))
+    print("Cog loaded: Utility")

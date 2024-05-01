@@ -19,8 +19,10 @@ def change(key, value):
         json.dump(config, config_file, indent=4)
 
 
-def load(file):
+def load(file, fallback={}):
     file = os.path.join(os.path.dirname(__file__), 'json', file)
+    if not os.path.exists(file):
+        return fallback
     with open(file) as f:
         return json.load(f)
 
