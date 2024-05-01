@@ -63,6 +63,8 @@ class AddAssignmentModal(discord.ui.Modal, title='Assignment'):
 
         self.data = data
         self.update_data = update_data
+        self.edit = False
+        self.assignment = None
         super().__init__()
         if assignment:
             self.assignment = assignment
