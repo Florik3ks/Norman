@@ -201,6 +201,11 @@ class Utility(commands.Cog):
         """Schickt ein Bild, welches dem angegebenen Latex-Code entspricht.
         [Hier ist eine generelle Hilfe](https://de.wikipedia.org/wiki/Hilfe:TeX), [hier ist eine Liste an Sonderzeichen](https://de.wikibooks.org/wiki/LaTeX-Kompendium:_Sonderzeichen),
         und hier eine ausführlichere und längere [Liste von Zeichen](https://www.caam.rice.edu/~heinken/latex/symbols.pdf)"""
+
+        if not os.path.exists(os.path.join(os.path.dirname(__file__), "..", "tmp")):
+            os.mkdir(os.path.join(os.path.dirname(__file__), "..", "tmp"))
+        os.chdir(os.path.join(os.path.dirname(__file__), "..", "tmp"))
+        
         arg = arg.strip("` ")
         try:
             img = self.latexToImage(arg)
@@ -209,9 +214,6 @@ class Utility(commands.Cog):
             return
         # img = img.resize((int(img.width * 2), int(img.height * 2)))#, Image.ANTIALIAS)
         with BytesIO() as image_binary:
-            if not os.path.exists(os.path.join(os.path.dirname(__file__), "..", "tmp")):
-                os.mkdir(os.path.join(os.path.dirname(__file__), "..", "tmp"))
-            os.chdir(os.path.join(os.path.dirname(__file__), "..", "tmp"))
             
             img.save(image_binary, 'PNG')
             image_binary.seek(0)
