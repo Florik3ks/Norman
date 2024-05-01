@@ -82,8 +82,9 @@ class Utility(commands.Cog):
 
         e = discord.Embed(title="Dein Icon")
         e.set_footer(text=ctx.author.display_name,
-                     icon_url=ctx.author.avatar_url)
-        e.timestamp = datetime.datetime.utcnow()
+                     icon_url=ctx.author.avatar)
+        e.color = ctx.author.color
+        e.timestamp = datetime.datetime.now()
         e.description = "{0}x{0}\n```".format(str(res))
         for line in dots:
             e.description += ''.join(line) + "\n"
