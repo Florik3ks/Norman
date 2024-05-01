@@ -20,9 +20,10 @@ def change(key, value):
 
 
 def load(file, fallback={}):
-    if not os.path.exists(os.path.join(os.path.dirname(__file__), 'json')):
-        os.makedirs('json')
-    file = os.path.join(os.path.dirname(__file__), 'json', file)
+    path = os.path.join(os.path.dirname(__file__), 'json')
+    if not os.path.exists(path):
+        os.makedirs(path)
+    file = os.path.join(path, file)
     if not os.path.exists(file):
         return fallback
     with open(file) as f:
@@ -30,8 +31,9 @@ def load(file, fallback={}):
 
 
 def dump(file, data):
-    if not os.path.exists(os.path.join(os.path.dirname(__file__), 'json')):
-        os.makedirs('json')
-    file = os.path.join(os.path.dirname(__file__), 'json', file)
+    path = os.path.join(os.path.dirname(__file__), 'json')
+    if not os.path.exists(path):
+        os.makedirs(path)
+    file = os.path.join(path, file)
     with open(file, 'w') as f:
         json.dump(data, f, indent=4)
