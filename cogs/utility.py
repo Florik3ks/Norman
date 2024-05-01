@@ -1,3 +1,4 @@
+import os
 import io
 import ast
 import typing
@@ -208,6 +209,10 @@ class Utility(commands.Cog):
             return
         # img = img.resize((int(img.width * 2), int(img.height * 2)))#, Image.ANTIALIAS)
         with BytesIO() as image_binary:
+            if not os.path.exists(os.path.join(os.path.dirname(__file__), "..", "tmp")):
+                os.mkdir(os.path.join(os.path.dirname(__file__), "..", "tmp"))
+            os.chdir(os.path.join(os.path.dirname(__file__), "..", "tmp"))
+            
             img.save(image_binary, 'PNG')
             image_binary.seek(0)
             await ctx.send(file=discord.File(fp=image_binary, filename='image.png'))
