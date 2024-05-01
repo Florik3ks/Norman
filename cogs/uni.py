@@ -59,10 +59,10 @@ class DeleteAssignment(discord.ui.View):
 
 
 class AddAssignmentModal(discord.ui.Modal, title='Assignment'):
-    def __init__(self, data, update_data, assignment=None, channel=None):
-
+    def __init__(self, data, update_data, update_assignments, assignment=None, channel=None):
         self.data = data
         self.update_data = update_data
+        self.update_assignments = update_assignments
         self.edit = False
         self.assignment = None
         super().__init__()
@@ -120,7 +120,14 @@ class AddAssignmentModal(discord.ui.Modal, title='Assignment'):
         self.data["assignments"]["channels"][channel].update(entry)
         update_data(self.data)
         end = "bearbeitet" if self.edit else "hinzugefügt"
-        await interaction.response.send_message(embed=discord.Embed(title=f"{self.name.value} wurde erfolgreich {end}!", color=discord.Color.green()), ephemeral=True)
+        e = discord.Embed(title=f"Hook für {self.name.value} wurde erfolgreich {end}!", color=discord.Color.green())
+        e.description = "```"
+        e.description += f"Path: {self.path.value}\n"
+        e.description += f"Pattern: {self.pattern.value}\n" if self.pattern.value else ""
+        e.description += f"Datetime Pattern: {self.datetime_pattern.value}" if self.datetime_pattern.value else ""
+        e.description += "```"
+        await interaction.response.send_message(embed=e)
+        await self.update_assignments()
 
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
         await interaction.response.send_message(embed=discord.Embed(title="Etwas ist schiefgelaufen", color=discord.Color.red()), ephemeral=True)
@@ -142,7 +149,7 @@ class Uni(commands.Cog):
 
     @app_commands.command(name="addassignmenthook", description="Erstellt einen Assignment Hook in diesem Channel.")
     async def addAssignmentHook(self, interaction: discord.Interaction):
-        await interaction.response.send_modal(AddAssignmentModal(self.data, update_data))
+        await interaction.response.send_modal(AddAssignmentModal(self.data, update_data, update_assignments=self.update_assignments))
 
     @app_commands.command(name="removeassignmenthook", description="Entfernt einen Assignment Hook in diesem Channel.")
     async def removeAssignmentHook(self, interaction: discord.Interaction):
@@ -176,7 +183,7 @@ class Uni(commands.Cog):
             await interaction.response.send_message(embed=discord.Embed(title=f'Das Assignment {assignment} existiert hier nicht!', color=discord.Color.red()), ephemeral=True)
             return
 
-        await interaction.response.send_modal(AddAssignmentModal(self.data, update_data=update_data, assignment=assignment, channel=channel))
+        await interaction.response.send_modal(AddAssignmentModal(self.data, update_data=update_data, assignment=assignment, channel=channel, update_assignments=self.update_assignments))
 
     async def send_to_channel(self, file, date, channel_id, ver=1):
         filename = file.split("/")[-1].split("\\")[-1]
@@ -191,6 +198,7 @@ class Uni(commands.Cog):
 
     @tasks.loop(hours=2)
     async def update_assignments(self):
+        print("assignments")
         # load files (https://github.com/Garmelon/PFERD)
         os.chdir(os.path.dirname(__file__) + os.sep + ".." + os.sep + "assignment-data")
         os.popen("sh loadAssignments.sh").read()
@@ -280,7 +288,7 @@ class Uni(commands.Cog):
             for page in pdf_reader.pages:
                 lines = page.extract_text().splitlines()
                 for line in lines:
-                    if re.match(time_pattern, line):
+                    if re.match(time_pattern, line) and len(re.match(time_pattern, line).groups()) > 1:
                         date = re.match(time_pattern, line).group(1)
                         time = re.match(time_pattern, line).group(2)
                         actual_date = datetime.strptime(

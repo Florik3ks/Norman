@@ -11,6 +11,7 @@ import config.public_config as config
 from discord.ext import commands
 import config.private_config as private
 from help.help_command import HelpCommand
+from discord.ext.commands.errors import (CommandNotFound, MissingRequiredArgument)
 
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix=config.get("prefix"),
@@ -27,7 +28,14 @@ async def on_error(event, *args, **kwargs):
 
 @bot.event
 async def on_command_error(ctx, error):
+    
+    
     error = error.original if hasattr(error, 'original') else error
+
+    if isinstance(error, (CommandNotFound, MissingRequiredArgument)):
+        return
+
+
     embed = discord.Embed(title=type(error).__name__[
                           :256], color=discord.Color.red())
     
