@@ -4,6 +4,6 @@
     "meme_channel_id": 0,
     "good_memes_channel_id": 0,
     "upvote_emoji": "",
-    "downote_emoji": "",
+    "downvote_emoji": "",
     "upvotes_for_pin": 0
 }
