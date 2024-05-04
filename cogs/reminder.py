@@ -134,7 +134,7 @@ class Reminders(commands.Cog, name="Erinnerungen"):
                 year = absolute_match.group("year")
                 if len(year) == 2:
                     year = int(year) + 2000
-                time = time.replace(year=year)
+                time = time.replace(year=int(year))
 
             if absolute_match.group("time"):
                 time = time.replace(hour=int(absolute_match.group(
