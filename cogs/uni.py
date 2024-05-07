@@ -154,7 +154,7 @@ class Uni(commands.Cog):
     @app_commands.command(name="removeassignmenthook", description="Entfernt einen Assignment Hook in diesem Channel.")
     async def removeAssignmentHook(self, interaction: discord.Interaction):
         channel = str(interaction.channel.id)
-        if not channel in self.data["assignments"]["channels"].keys():
+        if not channel in self.data["assignments"]["channels"].keys() or self.data["assignments"]["channels"][channel] == {}:
             await interaction.response.send_message(embed=discord.Embed(title=f'Es gibt keine Assignment Hooks in diesem Channel!', color=discord.Color.red()), ephemeral=True)
             return
 

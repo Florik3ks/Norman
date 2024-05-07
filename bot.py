@@ -46,20 +46,23 @@ async def on_command_error(ctx, error):
         traceback_str += " " * (error.offset - 1) + "^" + "\n"
     if hasattr(error, "msg"):
         traceback_str += error.msg
+    if hasattr(error, "args"):
+        traceback_str += "\n".join(error.args)
 
     if len(traceback_str) > 0:
         if len(traceback_str) > 2000:
             traceback_str = traceback_str[:1994] + "..."
         embed.description = f"```{traceback_str}```"
 
+    print("on command error:")
     print(error)
     await ctx.send(embed=embed)
 
 
 @bot.tree.error
-async def on_app_command_error(ctx, error):
+async def on_app_command_error(interaction, error):
     print(f"on_slash_command_error:\n{error}")
-    await ctx.send(error.text)
+    await interaction.channel.send(error)
     return
 
 
