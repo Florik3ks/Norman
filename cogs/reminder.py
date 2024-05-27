@@ -209,6 +209,41 @@ class Reminders(commands.Cog, name="Erinnerungen"):
             return
         await interaction.response.send_message(view=DeleteReminder(reminders), ephemeral=True)
 
+    @commands.command(aliases=["mr"])
+    async def myreminders(self, ctx):
+        """Listet alle Erinnerungen eines Nutzers auf"""
+        reminder = get_reminder()
+
+        e = discord.Embed(
+            title="Deine Erinnerungen",
+            color=ctx.author.color,
+            timestamp=datetime.datetime.now()
+        )
+        e.set_footer(text=ctx.author.name, icon_url=ctx.author.avatar)
+
+        if str(ctx.author.id) in list(reminder.keys()) and len(reminder[str(ctx.author.id)]) > 0:
+            for single_reminder in reminder[str(ctx.author.id)]:
+                # new
+                if single_reminder[0] == "{":
+                    rem = Reminder(r=single_reminder)
+                    with contextlib.suppress(BaseException):
+                        field = f"{rem.message}\n"
+                        if rem.channel:
+                            if not rem.private:
+                                field += f"in <#{rem.channel}>  "
+                            else:
+                                field += f"(in DM)"
+                        if rem.author != rem.users[0]:
+                            field += f"für <@{rem.users[0]}>\n"                            
+                        e.add_field(name=rem.date, value=field, inline=False)
+                # old
+                else:
+                    e.add_field(
+                        name=single_reminder[0], value=single_reminder[1], inline=False)
+        else:
+            e.title = "Du hast keine Erinnerungen."
+        await ctx.send(embed=e)
+
     @tasks.loop(seconds=60)
     async def checkReminder(self):
         r = get_reminder()
