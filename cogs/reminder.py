@@ -233,8 +233,10 @@ class Reminders(commands.Cog, name="Erinnerungen"):
                                 field += f"in <#{rem.channel}>  "
                             else:
                                 field += f"(in DM)"
-                        if rem.author != rem.users[0]:
-                            field += f"für <@{rem.users[0]}>\n"                            
+                        if len(rem.users) > 0 and rem.author != rem.users[0]:
+                            field += f"für <@{rem.users[0]}>\n"                 
+                        if len(rem.roles) > 0:
+                            field += f"für Rollen: {', '.join([f'<@&{role}>' for role in rem.roles])}"           
                         e.add_field(name=rem.date, value=field, inline=False)
                 # old
                 else:
