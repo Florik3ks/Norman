@@ -109,7 +109,7 @@ class Reminders(commands.Cog, name="Erinnerungen"):
         relative_match = re.match(
             r'^((?P<days>\d+?)d)?\s*((?P<hours>\d+?)h)?\s*((?P<minutes>\d+?)min)?$', zeit)
         absolute_match = re.match(
-            r'^((?P<day>\d{1,2})(\.(?P<month>\d{1,2}))(\.(?P<year>\d\d(\d\d)?))?)?\s*(?P<time>(?P<hour>\d\d):(?P<minute>\d\d))?$', zeit)
+            r'^((?P<day>\d{1,2})(\.(?P<month>\d{1,2}))(\.(?P<year>\d\d(\d\d)?))?)?\s*(?P<time>(?P<hour>\d{1,2}):(?P<minute>\d\d))?$', zeit)
 
         if not relative_match and not absolute_match:
             e = discord.Embed(title=f"Aktion unzulässig",
