@@ -59,7 +59,6 @@ class Memes(commands.Cog):
             # in case the message author tries to up-/downvote their own post
             if reaction.message.author == user and reaction.emoji in [upvote, downvote]:
                 await reaction.remove(user)
-                errormsg = await reaction.message.channel.send(f"{user.mention} Du darfst für deinen eigenen Beitrag nicht abstimmen.")
 
             # change voting counter
             if reaction.emoji == upvote:
