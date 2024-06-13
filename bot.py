@@ -16,7 +16,11 @@ from discord.ext.commands.errors import (CommandNotFound, MissingRequiredArgumen
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix=config.get("prefix"),
                    intents=intents, application_id=private.get("app_id"))
-bot.owner_id = private.get("owner_id")
+
+if(private.exists("owner_ids")):
+    bot.owner_ids = private.get("owner_ids")
+else:
+    bot.owner_id = private.get("owner_id")
 
 
 @bot.event
