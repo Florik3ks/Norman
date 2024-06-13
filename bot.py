@@ -45,9 +45,9 @@ async def on_command_error(ctx, error):
     if hasattr(error, "offset"):
         traceback_str += " " * (error.offset - 1) + "^" + "\n"
     if hasattr(error, "msg"):
-        traceback_str += error.msg
-    if hasattr(error, "args"):
-        traceback_str += "\n".join(error.args)
+        traceback_str += error.msg + "\n"
+    elif hasattr(error, "args"):
+        traceback_str += "\n".join([str(x) for x in error.args])
 
     if len(traceback_str) > 0:
         if len(traceback_str) > 2000:
