@@ -44,7 +44,7 @@ class DeleteReminder(discord.ui.View):
         self.reminders = reminders
         self.options = [
             discord.SelectOption(
-                label=f"{reminder.message} - {reminder.date}",
+                label=f"{reminder.message} - {reminder.date}"[:99],
                 value=str(i)
             ) for i, reminder in enumerate(reminders)]
 
